@@ -1,0 +1,36 @@
+elixir-cache: &elixir-cache
+  id: elixir
+  key: "v1-cache-{{ id }}-{{ runner.os }}-{{ env.BUILDKITE_AGENT_NAME }}-{{ checksum 'mix.lock' }}"
+  restore-keys:
+    - "v1-cache-{{ id }}-{{ runner.os }}-{{ env.BUILDKITE_AGENT_NAME }}-"
+  backend: s3
+  s3:
+    bucket: client-buildkite-cache-bucket
+  paths:
+    - _build
+    - deps
+
+node-cache: &node-cache
+  id: node
+  key: "v1-cache-{{ id }}-{{ runner.os }}-{{ checksum 'assets/yarn.lock' }}"
+  restore-keys:
+    - "v1-cache-{{ id }}-{{ runner.os }}-"
+  backend: s3
+  s3:
+    bucket: client-buildkite-cache-bucket
+  paths:
+    - assets/node_modules
+all-plugins: &all-plugins
+  - gencer/cache#v2.4.14: *elixir-cache
+  - gencer/cache#v2.4.14: *node-cache
+
+steps:
+  - label: "Run tests :elixir:"
+    key: test
+    command: ./bin/ci
+    plugins: *all-plugins
+  - wait
+  - label: "Deploy production :k8s:"
+    key: deploy
+    command: ./bin/deploy
+    branches: main

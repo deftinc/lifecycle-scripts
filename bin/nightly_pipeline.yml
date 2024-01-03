@@ -1,0 +1,15 @@
+steps:
+  - label: ":docker: :wastebasket:"
+    key: docker-cleanup
+    command: bin/docker-cleanup
+  - label: ":k8s: Restore staging cluster yaml"
+    key: staging-cluster-yaml
+    command: bin/staging-cluster-config
+  - label: ":zzz: Deploy"
+    trigger: "success"
+    build:
+      message: "${BUILDKITE_MESSAGE} (nightly)"
+      commit: "${BUILDKITE_COMMIT}"
+      branch: "${BUILDKITE_BRANCH}"
+      env:
+        NO_CACHE: "true"
